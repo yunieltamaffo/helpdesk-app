@@ -31,4 +31,8 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+Route::post('/tickets/{ticket}/comments', [TicketController::class, 'addComment'])
+     ->middleware('auth')
+     ->name('tickets.comments.store');
+
 require __DIR__.'/auth.php';
