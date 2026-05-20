@@ -11,41 +11,41 @@ class TicketController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $query = $user->isAdmin() || $user->isTechnicien()
+            ? Ticket::with('user')
+            : Ticket::where('user_id', $user->id);
 
-        if ($user->isAdmin() || $user->isTechnicien()) {
-            $tickets = Ticket::with('user')->latest()->get();
-        } else {
-            $tickets = Ticket::where('user_id', $user->id)->latest()->get();
-        }
+        if (request('status'))
+            $query->where('status', request('status'));
+        if (request('priority'))
+            $query->where('priority', request('priority'));
+        if (request('category'))
+            $query->where('category', request('category'));
 
+        $tickets = $query->latest()->get();
         return view('tickets.index', compact('tickets'));
-    }
-
-    public function create()
-    {
-        return view('tickets.create');
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'title'       => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'category'    => 'required|in:reseau,materiel,logiciel,acces,autre',
-            'priority'    => 'required|in:basse,moyenne,haute,urgente',
+            'category' => 'required|in:reseau,materiel,logiciel,acces,autre',
+            'priority' => 'required|in:basse,moyenne,haute,urgente',
         ]);
 
         Ticket::create([
-            'user_id'     => auth()->id(),
-            'title'       => $request->title,
+            'user_id' => auth()->id(),
+            'title' => $request->title,
             'description' => $request->description,
-            'category'    => $request->category,
-            'priority'    => $request->priority,
-            'status'      => 'ouvert',
+            'category' => $request->category,
+            'priority' => $request->priority,
+            'status' => 'ouvert',
         ]);
 
         return redirect()->route('tickets.index')
-                         ->with('success', 'Ticket créé avec succès !');
+            ->with('success', 'Ticket créé avec succès !');
     }
 
     public function show(Ticket $ticket)
@@ -73,16 +73,16 @@ class TicketController extends Controller
             $ticket->update(['status' => $request->status]);
         } else {
             $request->validate([
-                'title'       => 'required|string|max:255',
+                'title' => 'required|string|max:255',
                 'description' => 'required|string',
-                'category'    => 'required|in:reseau,materiel,logiciel,acces,autre',
-                'priority'    => 'required|in:basse,moyenne,haute,urgente',
+                'category' => 'required|in:reseau,materiel,logiciel,acces,autre',
+                'priority' => 'required|in:basse,moyenne,haute,urgente',
             ]);
             $ticket->update($request->only('title', 'description', 'category', 'priority'));
         }
 
         return redirect()->route('tickets.show', $ticket)
-                         ->with('success', 'Ticket mis à jour !');
+            ->with('success', 'Ticket mis à jour !');
     }
 
     public function destroy(Ticket $ticket)
@@ -90,7 +90,7 @@ class TicketController extends Controller
         $this->authorizeTicket($ticket);
         $ticket->delete();
         return redirect()->route('tickets.index')
-                         ->with('success', 'Ticket supprimé !');
+            ->with('success', 'Ticket supprimé !');
     }
 
     public function addComment(Request $request, Ticket $ticket)
@@ -101,12 +101,12 @@ class TicketController extends Controller
 
         Comment::create([
             'ticket_id' => $ticket->id,
-            'user_id'   => auth()->id(),
-            'content'   => $request->content,
+            'user_id' => auth()->id(),
+            'content' => $request->content,
         ]);
 
         return redirect()->route('tickets.show', $ticket)
-                         ->with('success', 'Commentaire ajouté !');
+            ->with('success', 'Commentaire ajouté !');
     }
 
     private function authorizeTicket(Ticket $ticket)
