@@ -33,7 +33,13 @@ class TicketController extends Controller
             'description' => 'required|string',
             'category' => 'required|in:reseau,materiel,logiciel,acces,autre',
             'priority' => 'required|in:basse,moyenne,haute,urgente',
+            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:2048',
         ]);
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('attachments', 'public');
+        }
 
         Ticket::create([
             'user_id' => auth()->id(),
@@ -42,12 +48,12 @@ class TicketController extends Controller
             'category' => $request->category,
             'priority' => $request->priority,
             'status' => 'ouvert',
+            'attachment' => $attachmentPath,
         ]);
 
         return redirect()->route('tickets.index')
             ->with('success', 'Ticket créé avec succès !');
     }
-
     public function show(Ticket $ticket)
     {
         $this->authorizeTicket($ticket);
